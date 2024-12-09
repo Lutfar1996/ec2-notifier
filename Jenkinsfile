@@ -5,9 +5,7 @@ pipeline {
         AWS_REGION = "us-east-1"
         INSTANCE_ID = "i-0dec7ae1549dba4a1"
         DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1315554436285726740/B0Wb36cKUF8o236R6xljUF_3cSG7VTcKbYAOWocEkQcHgB8zFx6Zvxbq_1zY4P8HZTwI"
-        // AWS_ACCESS_KEY_ID = credentials('aws_access_key_id')  // Define this in Jenkins Credentials Manager
-        // AWS_SECRET_ACCESS_KEY = credentials('aws_secret_access_key')  // Define this in Jenkins Credentials Manager
-        AWS_CREDENTIALS_ID = 'aws-credentials' // Replace with your AWS credentials ID
+        AWS_CREDENTIALS_ID = 'aws-credentials' // AWS credentials ID
         GITHUB_REPO = "https://github.com/Lutfar1996/ec2-notifier.git"
     }
 
@@ -18,53 +16,66 @@ pipeline {
             }
         }
 
-        stage('Wait for 13:26 (Start EC2 Instance)') {
+        stage('Wait for 13:28 (Start EC2 Instance)') {
             steps {
                 script {
-                    // Get the current time and calculate the remaining time to 13:26
+                    def timeZone = TimeZone.getTimeZone('Asia/Dhaka')
                     def currentTime = new Date()
-                    def targetTime = currentTime.clone()
-                    targetTime.setHours(13, 26, 0, 0)  // Set target time to 13:26
-                    def timeDifference = targetTime.time - currentTime.time
+                    currentTime.setTimeZone(timeZone)
 
-                    if (timeDifference > 0) {
-                        echo "Waiting for 13:26 to start EC2 instance..."
-                        sleep time: timeDifference / 1000, unit: 'SECONDS'  // Convert milliseconds to seconds
+                    def targetTime = currentTime.clone()
+                    targetTime.setTimeZone(timeZone)
+                    targetTime.setHours(13, 28, 0, 0)
+
+                    def timeDifference = targetTime.time - currentTime.time
+                    def sleepTimeInSeconds = timeDifference / 1000
+
+                    if (sleepTimeInSeconds > 0) {
+                        echo "Waiting for 13:28 to start EC2 instance..."
+                        sleep time: sleepTimeInSeconds, unit: 'SECONDS'
                     } else {
-                        echo "It's already past 13:26, proceeding to start EC2 instance."
+                        echo "It's already past 13:28, proceeding to start EC2 instance."
                     }
                 }
             }
         }
 
         stage('Start EC2 Instance') {
-           script {
-                    // Use withCredentials to inject AWS IAM credentials
-                    withCredentials([[
-                        $class: 'AmazonWebServicesCredentialsBinding', 
-                        credentialsId: AWS_CREDENTIALS_ID // AWS credentials ID
+            steps {
+                script {
+                    withCredentials([[ 
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: AWS_CREDENTIALS_ID 
                     ]]) {
-                        // Run your python script with AWS credentials available
-                        sh '''#!/bin/bash
-                           
-                            python3 script.py start
-                        '''
+                        try {
+                            echo "Starting EC2 instance..."
+                            sh "python3 script.py start"
+                        } catch (Exception e) {
+                            echo "Failed to start EC2 instance: ${e.getMessage()}"
+                            error "Exiting due to failure"
+                        }
                     }
                 }
+            }
         }
 
         stage('Wait for 13:30 (Stop EC2 Instance)') {
             steps {
                 script {
-                    // Get the current time and calculate the remaining time to 13:30
+                    def timeZone = TimeZone.getTimeZone('Asia/Dhaka')
                     def currentTime = new Date()
-                    def targetTime = currentTime.clone()
-                    targetTime.setHours(13, 30, 0, 0)  // Set target time to 13:30
-                    def timeDifference = targetTime.time - currentTime.time
+                    currentTime.setTimeZone(timeZone)
 
-                    if (timeDifference > 0) {
+                    def targetTime = currentTime.clone()
+                    targetTime.setTimeZone(timeZone)
+                    targetTime.setHours(13, 30, 0, 0)
+
+                    def timeDifference = targetTime.time - currentTime.time
+                    def sleepTimeInSeconds = timeDifference / 1000
+
+                    if (sleepTimeInSeconds > 0) {
                         echo "Waiting for 13:30 to stop EC2 instance..."
-                        sleep time: timeDifference / 1000, unit: 'SECONDS'  // Convert milliseconds to seconds
+                        sleep time: sleepTimeInSeconds, unit: 'SECONDS'
                     } else {
                         echo "It's already past 13:30, proceeding to stop EC2 instance."
                     }
@@ -73,19 +84,22 @@ pipeline {
         }
 
         stage('Stop EC2 Instance') {
-             script {
-                    // Use withCredentials to inject AWS IAM credentials
-                    withCredentials([[
+            steps {
+                script {
+                    withCredentials([[ 
                         $class: 'AmazonWebServicesCredentialsBinding', 
-                        credentialsId: AWS_CREDENTIALS_ID // AWS credentials ID
+                        credentialsId: AWS_CREDENTIALS_ID 
                     ]]) {
-                        // Run your python script with AWS credentials available
-                        sh '''#!/bin/bash
-                           
-                            python3 script.py stop
-                        '''
+                        try {
+                            echo "Stopping EC2 instance..."
+                            sh "python3 script.py stop"
+                        } catch (Exception e) {
+                            echo "Failed to stop EC2 instance: ${e.getMessage()}"
+                            error "Exiting due to failure"
+                        }
                     }
                 }
+            }
         }
     }
 
@@ -95,7 +109,6 @@ pipeline {
         }
     }
 }
-
 
 
 // ---------------------
