@@ -10,7 +10,7 @@ pipeline {
     }
 
     triggers {
-        cron('50 7 * * *')  // Trigger at 07:40 UTC (13:40 BGT) for EC2 Start
+        cron('52 7 * * *')  // Trigger at 07:40 UTC (13:40 BGT) for EC2 Start
     }
 
     stages {
