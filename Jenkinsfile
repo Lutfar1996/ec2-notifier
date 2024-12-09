@@ -9,15 +9,20 @@ pipeline {
     }
 
     triggers {
-        cron('59 7 * * *')  // Trigger at 07:40 UTC (13:40 BGT) for EC2 Start
+        cron('19 8 * * *')  // Trigger at 07:40 UTC (13:40 BGT) for EC2 Start
     }
 
     stages {
         stage('Install Dependencies') {
             steps {
                 script {
-                    echo "Installing Python dependencies..."
-                    sh 'pip install boto3 requests'
+                    // Install necessary dependencies, create virtual environment
+                    sh '''#!/bin/bash
+                        sudo apt update && sudo apt install -y python3.12-venv
+                        python3 -m venv venv
+                        source venv/bin/activate
+                        pip install -r requirements.txt
+                    '''
                 }
             }
         }
@@ -26,7 +31,10 @@ pipeline {
             steps {
                 script {
                     echo "Starting EC2 Instance: ${INSTANCE_ID}..."
-                    sh 'python3 manage_ec2.py start'  // Replace with your EC2 start command
+                     sh '''#!/bin/bash
+                            source venv/bin/activate
+                            python3 ec2_notifier.py
+                        '''
                     sendDiscordNotification("🚀 EC2 instance ${INSTANCE_ID} has started.")
                 }
             }
@@ -36,7 +44,10 @@ pipeline {
             steps {
                 script {
                     echo "Stopping EC2 Instance: ${INSTANCE_ID}..."
-                    sh 'python3 manage_ec2.py stop'  // Replace with your EC2 stop command
+                     sh '''#!/bin/bash
+                            source venv/bin/activate
+                            python3 ec2_notifier.py
+                        '''
                     sendDiscordNotification("🛑 EC2 instance ${INSTANCE_ID} has stopped.")
                 }
             }
