@@ -5,18 +5,18 @@ pipeline {
         AWS_REGION = "us-east-1"
         INSTANCE_ID = "i-0dec7ae1549dba4a1"  // Replace with your EC2 instance ID
         DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1315554436285726740/B0Wb36cKUF8o236R6xljUF_3cSG7VTcKbYAOWocEkQcHgB8zFx6Zvxbq_1zY4P8HZTwI"  // Replace with your Discord webhook URL
-       AWS_CREDENTIALS_ID = 'aws-credentials' // Replace with your AWS credentials ID
+        AWS_CREDENTIALS_ID = 'aws-credentials' // Replace with your AWS credentials ID
     }
 
     triggers {
-        cron('28 8 * * *')  // Trigger at 07:40 UTC (13:40 BGT) for EC2 Start
+        cron('35 8 * * *')  // Trigger at 08:28 UTC (14:28 BGT)
     }
 
     stages {
         stage('Install Dependencies') {
             steps {
                 script {
-                    // Install necessary dependencies, create virtual environment
+                    // Install necessary dependencies and create a virtual environment
                     sh '''#!/bin/bash
                         sudo apt update && sudo apt install -y python3.12-venv
                         python3 -m venv venv
@@ -30,12 +30,15 @@ pipeline {
         stage('Start EC2 Instance') {
             steps {
                 script {
-                    echo "Starting EC2 Instance: ${INSTANCE_ID}..."
-                     sh '''#!/bin/bash
+                    // Using AWS credentials securely
+                    withCredentials([aws(credentialsId: AWS_CREDENTIALS_ID, accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        echo "Starting EC2 Instance: ${INSTANCE_ID}..."
+                        sh '''#!/bin/bash
                             source venv/bin/activate
                             python3 ec2_notifier.py start
                         '''
-                    sendDiscordNotification("🚀 EC2 instance ${INSTANCE_ID} has started.")
+                        sendDiscordNotification("🚀 EC2 instance ${INSTANCE_ID} has started.")
+                    }
                 }
             }
         }
@@ -43,12 +46,15 @@ pipeline {
         stage('Stop EC2 Instance') {
             steps {
                 script {
-                    echo "Stopping EC2 Instance: ${INSTANCE_ID}..."
-                     sh '''#!/bin/bash
+                    // Using AWS credentials securely
+                    withCredentials([aws(credentialsId: AWS_CREDENTIALS_ID, accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        echo "Stopping EC2 Instance: ${INSTANCE_ID}..."
+                        sh '''#!/bin/bash
                             source venv/bin/activate
                             python3 ec2_notifier.py stop
                         '''
-                    sendDiscordNotification("🛑 EC2 instance ${INSTANCE_ID} has stopped.")
+                        sendDiscordNotification("🛑 EC2 instance ${INSTANCE_ID} has stopped.")
+                    }
                 }
             }
         }
@@ -73,6 +79,7 @@ def sendDiscordNotification(message) {
         echo "Discord notification sent successfully."
     }
 }
+
 
 
 // ---------------------
