@@ -5,12 +5,11 @@ pipeline {
         AWS_REGION = "us-east-1"
         INSTANCE_ID = "i-0dec7ae1549dba4a1"  // Replace with your EC2 instance ID
         DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1315554436285726740/B0Wb36cKUF8o236R6xljUF_3cSG7VTcKbYAOWocEkQcHgB8zFx6Zvxbq_1zY4P8HZTwI"  // Replace with your Discord webhook URL
-        AWS_ACCESS_KEY_ID = credentials('aws_access_key_id')  // Define this in Jenkins Credentials Manager
-        AWS_SECRET_ACCESS_KEY = credentials('aws_secret_access_key')  // Define this in Jenkins Credentials Manager
+       AWS_CREDENTIALS_ID = 'aws-credentials' // Replace with your AWS credentials ID
     }
 
     triggers {
-        cron('56 7 * * *')  // Trigger at 07:40 UTC (13:40 BGT) for EC2 Start
+        cron('59 7 * * *')  // Trigger at 07:40 UTC (13:40 BGT) for EC2 Start
     }
 
     stages {
