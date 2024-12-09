@@ -10,7 +10,7 @@ pipeline {
     }
 
     triggers {
-        cron('52 7 * * *')  // Trigger at 07:40 UTC (13:40 BGT) for EC2 Start
+        cron('56 7 * * *')  // Trigger at 07:40 UTC (13:40 BGT) for EC2 Start
     }
 
     stages {
@@ -24,12 +24,6 @@ pipeline {
         }
 
         stage('Start EC2 Instance') {
-            when {
-                expression {
-                    def currentHour = new Date().format("HH", TimeZone.getTimeZone("UTC"))
-                    return currentHour == "07" // Ensures it runs only at 07:40 UTC
-                }
-            }
             steps {
                 script {
                     echo "Starting EC2 Instance: ${INSTANCE_ID}..."
@@ -40,12 +34,6 @@ pipeline {
         }
 
         stage('Stop EC2 Instance') {
-            when {
-                expression {
-                    def currentHour = new Date().format("HH", TimeZone.getTimeZone("UTC"))
-                    return currentHour == "07"  // Ensures it runs only at 07:50 UTC
-                }
-            }
             steps {
                 script {
                     echo "Stopping EC2 Instance: ${INSTANCE_ID}..."
@@ -75,7 +63,6 @@ def sendDiscordNotification(message) {
         echo "Discord notification sent successfully."
     }
 }
-
 
 
 // ---------------------
