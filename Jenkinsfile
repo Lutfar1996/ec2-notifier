@@ -5,8 +5,9 @@ pipeline {
         AWS_REGION = "us-east-1"
         INSTANCE_ID = "i-0dec7ae1549dba4a1"
         DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1315554436285726740/B0Wb36cKUF8o236R6xljUF_3cSG7VTcKbYAOWocEkQcHgB8zFx6Zvxbq_1zY4P8HZTwI"
-        AWS_ACCESS_KEY_ID = credentials('aws_access_key_id')  // Define this in Jenkins Credentials Manager
-        AWS_SECRET_ACCESS_KEY = credentials('aws_secret_access_key')  // Define this in Jenkins Credentials Manager
+        // AWS_ACCESS_KEY_ID = credentials('aws_access_key_id')  // Define this in Jenkins Credentials Manager
+        // AWS_SECRET_ACCESS_KEY = credentials('aws_secret_access_key')  // Define this in Jenkins Credentials Manager
+        AWS_CREDENTIALS_ID = 'aws-credentials' // Replace with your AWS credentials ID
         GITHUB_REPO = "https://github.com/Lutfar1996/ec2-notifier.git"
     }
 
@@ -17,54 +18,74 @@ pipeline {
             }
         }
 
-        stage('Wait for 13:10 (Start EC2 Instance)') {
+        stage('Wait for 13:26 (Start EC2 Instance)') {
             steps {
                 script {
-                    // Get the current time and calculate the remaining time to 13:10
+                    // Get the current time and calculate the remaining time to 13:26
                     def currentTime = new Date()
                     def targetTime = currentTime.clone()
-                    targetTime.setHours(13, 10, 0, 0)  // Set target time to 13:10
+                    targetTime.setHours(13, 26, 0, 0)  // Set target time to 13:26
                     def timeDifference = targetTime.time - currentTime.time
 
                     if (timeDifference > 0) {
-                        echo "Waiting for 13:10 to start EC2 instance..."
+                        echo "Waiting for 13:26 to start EC2 instance..."
                         sleep time: timeDifference / 1000, unit: 'SECONDS'  // Convert milliseconds to seconds
                     } else {
-                        echo "It's already past 13:10, proceeding to start EC2 instance."
+                        echo "It's already past 13:26, proceeding to start EC2 instance."
                     }
                 }
             }
         }
 
         stage('Start EC2 Instance') {
-            steps {
-                sh 'python3 manage_ec2.py start'
-            }
+           script {
+                    // Use withCredentials to inject AWS IAM credentials
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding', 
+                        credentialsId: AWS_CREDENTIALS_ID // AWS credentials ID
+                    ]]) {
+                        // Run your python script with AWS credentials available
+                        sh '''#!/bin/bash
+                           
+                            python3 script.py start
+                        '''
+                    }
+                }
         }
 
-        stage('Wait for 13:15 (Stop EC2 Instance)') {
+        stage('Wait for 13:30 (Stop EC2 Instance)') {
             steps {
                 script {
-                    // Get the current time and calculate the remaining time to 13:15
+                    // Get the current time and calculate the remaining time to 13:30
                     def currentTime = new Date()
                     def targetTime = currentTime.clone()
-                    targetTime.setHours(13, 15, 0, 0)  // Set target time to 13:15
+                    targetTime.setHours(13, 30, 0, 0)  // Set target time to 13:30
                     def timeDifference = targetTime.time - currentTime.time
 
                     if (timeDifference > 0) {
-                        echo "Waiting for 13:15 to stop EC2 instance..."
+                        echo "Waiting for 13:30 to stop EC2 instance..."
                         sleep time: timeDifference / 1000, unit: 'SECONDS'  // Convert milliseconds to seconds
                     } else {
-                        echo "It's already past 13:15, proceeding to stop EC2 instance."
+                        echo "It's already past 13:30, proceeding to stop EC2 instance."
                     }
                 }
             }
         }
 
         stage('Stop EC2 Instance') {
-            steps {
-                sh 'python3 manage_ec2.py stop'
-            }
+             script {
+                    // Use withCredentials to inject AWS IAM credentials
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding', 
+                        credentialsId: AWS_CREDENTIALS_ID // AWS credentials ID
+                    ]]) {
+                        // Run your python script with AWS credentials available
+                        sh '''#!/bin/bash
+                           
+                            python3 script.py stop
+                        '''
+                    }
+                }
         }
     }
 
