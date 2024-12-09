@@ -9,95 +9,39 @@ pipeline {
         GITHUB_REPO = "https://github.com/Lutfar1996/ec2-notifier.git"
     }
 
+    triggers {
+        cron('40 7 * * *')  // Trigger at 07:40 UTC (13:40 BGT) for EC2 Start
+    }
+
     stages {
-        stage('Clone Repository') {
-            steps {
-                git branch: 'main', url: "${GITHUB_REPO}"
-            }
-        }
-
-        stage('Wait for 13:28 (Start EC2 Instance)') {
-            steps {
-                script {
-                    def timeZone = TimeZone.getTimeZone('Asia/Dhaka')
-                    def currentTime = new Date()
-                    currentTime.setTimeZone(timeZone)
-
-                    def targetTime = currentTime.clone()
-                    targetTime.setTimeZone(timeZone)
-                    targetTime.setHours(13, 28, 0, 0)
-
-                    def timeDifference = targetTime.time - currentTime.time
-                    def sleepTimeInSeconds = timeDifference / 1000
-
-                    if (sleepTimeInSeconds > 0) {
-                        echo "Waiting for 13:28 to start EC2 instance..."
-                        sleep time: sleepTimeInSeconds, unit: 'SECONDS'
-                    } else {
-                        echo "It's already past 13:28, proceeding to start EC2 instance."
-                    }
-                }
-            }
-        }
-
         stage('Start EC2 Instance') {
-            steps {
-                script {
-                    withCredentials([[ 
-                        $class: 'AmazonWebServicesCredentialsBinding',
-                        credentialsId: AWS_CREDENTIALS_ID 
-                    ]]) {
-                        try {
-                            echo "Starting EC2 instance..."
-                            sh "python3 script.py start"
-                        } catch (Exception e) {
-                            echo "Failed to start EC2 instance: ${e.getMessage()}"
-                            error "Exiting due to failure"
-                        }
-                    }
+            when {
+                expression {
+                    def currentHour = new Date().format("HH", TimeZone.getTimeZone("UTC"))
+                    return currentHour == "07" // Ensures it runs only at 07:40 UTC
                 }
             }
-        }
-
-        stage('Wait for 13:30 (Stop EC2 Instance)') {
             steps {
                 script {
-                    def timeZone = TimeZone.getTimeZone('Asia/Dhaka')
-                    def currentTime = new Date()
-                    currentTime.setTimeZone(timeZone)
-
-                    def targetTime = currentTime.clone()
-                    targetTime.setTimeZone(timeZone)
-                    targetTime.setHours(13, 30, 0, 0)
-
-                    def timeDifference = targetTime.time - currentTime.time
-                    def sleepTimeInSeconds = timeDifference / 1000
-
-                    if (sleepTimeInSeconds > 0) {
-                        echo "Waiting for 13:30 to stop EC2 instance..."
-                        sleep time: sleepTimeInSeconds, unit: 'SECONDS'
-                    } else {
-                        echo "It's already past 13:30, proceeding to stop EC2 instance."
-                    }
+                    echo "Starting EC2 Instance: ${INSTANCE_ID}..."
+                    sh 'python3 manage_ec2.py start'  // Replace with your EC2 start command
+                    sendDiscordNotification("🚀 EC2 instance ${INSTANCE_ID} has started.")
                 }
             }
         }
 
         stage('Stop EC2 Instance') {
+            when {
+                expression {
+                    def currentHour = new Date().format("HH", TimeZone.getTimeZone("UTC"))
+                    return currentHour == "07"  // Ensures it runs only at 07:50 UTC
+                }
+            }
             steps {
                 script {
-                    withCredentials([[ 
-                        $class: 'AmazonWebServicesCredentialsBinding', 
-                        credentialsId: AWS_CREDENTIALS_ID 
-                    ]]) {
-                        try {
-                            echo "Stopping EC2 instance..."
-                            sh "python3 script.py stop"
-                        } catch (Exception e) {
-                            echo "Failed to stop EC2 instance: ${e.getMessage()}"
-                            error "Exiting due to failure"
-                        }
-                    }
+                    echo "Stopping EC2 Instance: ${INSTANCE_ID}..."
+                    sh 'python3 manage_ec2.py stop'  // Replace with your EC2 stop command
+                    sendDiscordNotification("🛑 EC2 instance ${INSTANCE_ID} has stopped.")
                 }
             }
         }
@@ -107,6 +51,19 @@ pipeline {
         always {
             echo "Pipeline execution completed."
         }
+    }
+}
+
+def sendDiscordNotification(message) {
+    echo "Sending Discord notification..."
+    def response = sh(script: """
+        curl -X POST -H "Content-Type: application/json" -d '{"content": "${message}"}' ${DISCORD_WEBHOOK_URL}
+    """, returnStatus: true)
+    
+    if (response != 0) {
+        echo "Failed to send Discord notification."
+    } else {
+        echo "Discord notification sent successfully."
     }
 }
 
