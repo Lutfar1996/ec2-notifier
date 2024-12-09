@@ -9,7 +9,7 @@ pipeline {
     }
 
     triggers {
-        cron('39 9 * * *')  // Trigger at 08:28 UTC (14:28 BGT) for both starting and stopping the EC2 instance
+        cron('44 9 * * *')  // Trigger at 08:28 UTC (14:28 BGT) for both starting and stopping the EC2 instance
     }
 
     stages {
@@ -32,7 +32,7 @@ pipeline {
                 expression { 
                     // Ensure the action only happens if the current time is close to the start time
                     def currentTime = new Date().format('HH', TimeZone.getTimeZone('UTC'))
-                    return currentTime == '09'
+                    return currentTime == '09:44'
                 }
             }
             steps {
@@ -55,7 +55,7 @@ pipeline {
                 expression {
                     // Ensure the action only happens if the current time is close to the stop time
                     def currentTime = new Date().format('HH', TimeZone.getTimeZone('UTC'))
-                    return currentTime == '08'  // Update to the correct time for stopping EC2
+                    return currentTime == '09:47'  // Update to the correct time for stopping EC2
                 }
             }
             steps {
