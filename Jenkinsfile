@@ -9,7 +9,7 @@ pipeline {
     }
 
     triggers {
-        cron('19 8 * * *')  // Trigger at 07:40 UTC (13:40 BGT) for EC2 Start
+        cron('28 8 * * *')  // Trigger at 07:40 UTC (13:40 BGT) for EC2 Start
     }
 
     stages {
@@ -33,7 +33,7 @@ pipeline {
                     echo "Starting EC2 Instance: ${INSTANCE_ID}..."
                      sh '''#!/bin/bash
                             source venv/bin/activate
-                            python3 ec2_notifier.py
+                            python3 ec2_notifier.py start
                         '''
                     sendDiscordNotification("🚀 EC2 instance ${INSTANCE_ID} has started.")
                 }
@@ -46,7 +46,7 @@ pipeline {
                     echo "Stopping EC2 Instance: ${INSTANCE_ID}..."
                      sh '''#!/bin/bash
                             source venv/bin/activate
-                            python3 ec2_notifier.py
+                            python3 ec2_notifier.py stop
                         '''
                     sendDiscordNotification("🛑 EC2 instance ${INSTANCE_ID} has stopped.")
                 }
