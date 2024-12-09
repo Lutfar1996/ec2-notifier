@@ -24,7 +24,7 @@ pipeline {
             steps {
                 script {
                     echo "Starting EC2 Instance: ${INSTANCE_ID}..."
-                    sh 'python3 ec2_notify.py start'  // Replace with your EC2 start command
+                    sh 'python3 notifier.py start'  // Replace with your EC2 start command
                     sendDiscordNotification("🚀 EC2 instance ${INSTANCE_ID} has started.")
                 }
             }
@@ -40,7 +40,7 @@ pipeline {
             steps {
                 script {
                     echo "Stopping EC2 Instance: ${INSTANCE_ID}..."
-                    sh 'python3 ec2_notify.py stop'  // Replace with your EC2 stop command
+                    sh 'python3 notifier.py stop'  // Replace with your EC2 stop command
                     sendDiscordNotification("🛑 EC2 instance ${INSTANCE_ID} has stopped.")
                 }
             }
